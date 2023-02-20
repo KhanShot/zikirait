@@ -56,6 +56,7 @@ class ZhumaController extends Controller
         if (!$zhuma)
             return back()->with('error', '404');
 
+
         $zhuma->delete();
         return redirect()->route('zhuma');
 

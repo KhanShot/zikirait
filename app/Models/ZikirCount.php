@@ -10,8 +10,11 @@ class ZikirCount extends Model
     use HasFactory;
     public $fillable = [
         'user_id',
-        'count'
+        'count',
+        'created_at'
     ];
+    public $timestamps = true;
+
     public function user(){
         return $this->belongsTo(User::class,'user_id');
     }

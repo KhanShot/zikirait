@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\TJsonResponse;
 use App\Http\Traits\Utils;
+use App\Models\UserGoal;
 use App\Models\ZhumaLive;
 use Illuminate\Http\Request;
 use App\Models\ZikirCount;
@@ -14,8 +15,9 @@ class ZikirCountController extends Controller
 {
     use TJsonResponse;
     public function addCount(Request $request){
-        ZikirCount::query()->create(
-            ['user_id' => auth()->user()->id,
+        ZikirCount::query()->create([
+                'user_id' => auth()->user()->id,
+                'created_at' => $request->get('date'),
                 'count' => $request->get('count', null)]);
 
 
@@ -50,5 +52,43 @@ class ZikirCountController extends Controller
          });
     }
 
+    public function addGoal(Request $request){
+        UserGoal::query()->create([
+            'user_id' => auth()->user()->id,
+            'goal' => $request->get('goal')
+        ]);
+
+        return $this->successResponse(Utils::$MESSAGE_SUCCESS_ADDED);
+    }
+    public function getStats(Request $request){
+
+        if ($request->get('period') == 'week'){
+            $zikir = ZikirCount::query()
+                ->where('created_at', '>=', \Carbon\Carbon::now()->subWeek())
+                ->groupBy('date')
+                ->orderBy('date', 'DESC')
+                ->get(array(
+                    DB::raw('Date(created_at) as date'),
+                    DB::raw('sum(count) as "total_count"')
+                ));
+
+            return $zikir;
+        }
+
+        elseif ($request->get('period') === 'year' ){
+
+            return  ZikirCount::query()->select(
+
+                DB::raw("(sum(count)) as total_count"),
+                DB::raw("(DATE_FORMAT(created_at, '%m-%Y')) as date")
+            )
+                ->where('user_id', auth()->user()->id)
+                ->orderBy('created_at')
+                ->groupBy(DB::raw("DATE_FORMAT(created_at, '%m-%Y')"))
+                ->get();;
+        }
+
+        return [];
+    }
 
 }

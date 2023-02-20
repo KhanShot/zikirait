@@ -18,6 +18,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::get('/unauthenticated', function (){
+    return response()->json(['success'=> false, 'message'=>'unauthenticated'],401);
+})->name('unauthenticated');
+
 
 Route::prefix('user')->group(function (){
     Route::post('register', [\App\Http\Controllers\Api\UserController::class, 'register']);
@@ -26,7 +30,15 @@ Route::prefix('user')->group(function (){
 
     Route::get('get-info', [\App\Http\Controllers\Api\UserController::class, 'getInfo'])->middleware('auth:sanctum');
 
+    Route::prefix('password')->group(function (){
+        Route::post('check', [\App\Http\Controllers\Api\PasswordController::class, 'check']);
+        Route::post('reset', [\App\Http\Controllers\Api\PasswordController::class, 'reset']);
+        Route::post('update', [\App\Http\Controllers\Api\PasswordController::class, 'update'])->middleware('auth:sanctum');
+    });
 });
+
+
+Route::post('user/update', [\App\Http\Controllers\Api\UserController::class, 'update'])->middleware('auth:sanctum');
 
 Route::prefix('zikir')->middleware('auth:sanctum')->group(function (){
 
@@ -36,4 +48,5 @@ Route::prefix('zikir')->middleware('auth:sanctum')->group(function (){
     Route::get('get-zhuma', [\App\Http\Controllers\Api\ZikirCountController::class, 'getZhuma']);
     Route::post('add-goal', [\App\Http\Controllers\Api\ZikirCountController::class, 'addGoal']);
 
+    Route::get('get-stats', [\App\Http\Controllers\Api\ZikirCountController::class, 'getStats']);
 });

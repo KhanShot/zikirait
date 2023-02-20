@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserLoginRequest;
 use App\Http\Requests\UserRegisterRequest;
+use App\Http\Requests\UserUpdateProfileRequest;
 use App\Http\Services\UserService;
 use App\Http\Traits\TJsonResponse;
 use App\Http\Traits\Utils;
@@ -56,6 +57,22 @@ class UserController extends Controller
         $data['today_count'] = ZikirCount::query()->where('user_id', auth()->user()->id)->whereDate('created_at', today())->sum('count');
 
         return $data;
+    }
+
+
+    public function update(UserUpdateProfileRequest $request){
+
+        $user = User::query()->find(\auth()->user()->id);
+        $data = array();
+        if ($request->has('name'))
+            $data['name'] = $request->get('name');
+        if ($request->has('phone'))
+            $data['phone'] = $request->get('phone');
+        if ($request->has('username'))
+            $data['username'] = $request->get('username');
+
+        $user->update($data);
+        return $this->successResponse(Utils::$MESSAGE_USER_PROFILE_UPDATED);
     }
 
 

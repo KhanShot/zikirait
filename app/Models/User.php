@@ -23,6 +23,7 @@ class User extends Authenticatable
         'phone',
         'socialite',
         'socialite_id',
+        'username',
         'password',
         'is_admin'
     ];
