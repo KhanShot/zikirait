@@ -54,7 +54,7 @@ class UserController extends Controller
     public function getInfo(){
         $data['user'] = \auth()->user();
         $data['goal'] = UserGoal::query()->where('user_id', $data['user']->id)->first()->goal ?? null;
-        $data['today_count'] = ZikirCount::query()->where('user_id', auth()->user()->id)->whereDate('created_at', today())->sum('count');
+        $data['today_count'] = intval(ZikirCount::query()->where('user_id', auth()->user()->id)->whereDate('created_at', today())->sum('count'));
 
         return $data;
     }
