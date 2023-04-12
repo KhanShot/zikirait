@@ -7,6 +7,7 @@ use App\Http\Traits\TJsonResponse;
 use App\Http\Traits\Utils;
 use App\Models\UserGoal;
 use App\Models\ZhumaLive;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\ZikirCount;
 use Illuminate\Support\Facades\DB;
@@ -25,9 +26,9 @@ class ZikirCountController extends Controller
     }
 
     public function getToday(){
-        $count = ZikirCount::query()->where('user_id', auth()->user()->id)->whereDate('created_at', today())->sum('count');
+        $count = ZikirCount::query()->where('user_id', auth()->user()->id)->whereDate('created_at', Carbon::today())->sum('count');
 
-        return $this->successResponse(null, ['count' => $count]);
+        return $this->successResponse(null, ['count' => $count, 'now' => Carbon::today()]);
     }
 
     public function getZhuma(){
@@ -37,19 +38,35 @@ class ZikirCountController extends Controller
     }
 
     public function getTopForToday(){
-         $data = ZikirCount::query()->whereDate('created_at', today())->with('user')->select('user_id', DB::raw('SUM(count) as total_today'))
+         $data = ZikirCount::query()->whereDate('created_at', today())->with('user')
+             ->select('user_id', DB::raw('SUM(count) as total_today'))
+             ->selectRaw('ROW_NUMBER() OVER() AS row_num')
              ->groupBy('user_id')
              ->orderBy('total_today', 'DESC')
              ->limit(10)
              ->get();
 
-         return $data->transform(function ($value){
+        $user = ZikirCount::query()->whereDate('created_at', today())->with('user')
+            ->select('user_id', DB::raw('SUM(count) as total_today'))
+            ->selectRaw('ROW_NUMBER() OVER() AS row_num')
+            ->groupBy('user_id')
+//            ->where('user_id', 3)
+            ->orderBy('total_today', 'DESC')
+            ->get();
+
+
+        $user = $user->where('user_id', 3);
+
+         $data = $data->transform(function ($value){
              return [
                  'total_today' => $value->total_today,
                  'user_name' => $value->user->name,
-                 'user_id' => $value->user->id
+                 'user_id' => $value->user->id,
+                 'row_num' => $value->row_num,
              ];
          });
+
+         return array('top' => $data, 'user_top_place' => $user['1']->row_num);
     }
 
     public function addGoal(Request $request){
