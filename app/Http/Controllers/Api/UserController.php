@@ -14,6 +14,7 @@ use App\Models\UserGoal;
 use App\Models\ZikirCount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -49,13 +50,26 @@ class UserController extends Controller
             return $this->failedResponse(Utils::$MESSAGE_LOGIN_INCORRECT,400);
         }
     }
+    private function getPlaceTop(){
+        $user = ZikirCount::query()->whereDate('created_at', today())->with('user')
+            ->select('user_id', DB::raw('SUM(count) as total_today'))
+            ->selectRaw('ROW_NUMBER() OVER(ORDER BY SUM(count) desc) AS row_num')
+            ->groupBy('user_id')
+            ->orderBy('total_today', 'ASC')
+            ->get();
 
+
+        $after = ZikirCount::query()->whereDate('created_at', today())->pluck('user_id')->unique()->count();
+
+        $user = $user->where('user_id', auth()->user()->id);
+        return $user->first()->row_num ?? $after + 1;
+    }
 
     public function getInfo(){
         $data['user'] = \auth()->user();
         $data['goal'] = UserGoal::query()->where('user_id', $data['user']->id)->first()->goal ?? null;
         $data['today_count'] = intval(ZikirCount::query()->where('user_id', auth()->user()->id)->whereDate('created_at', today())->sum('count'));
-
+        $data['place_on_top'] = $this->getPlaceTop();
         return $data;
     }
 

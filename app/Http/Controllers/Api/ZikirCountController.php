@@ -28,7 +28,7 @@ class ZikirCountController extends Controller
     public function getToday(){
         $count = ZikirCount::query()->where('user_id', auth()->user()->id)->whereDate('created_at', Carbon::today())->sum('count');
 
-        return $this->successResponse(null, ['count' => $count, 'now' => Carbon::today()]);
+        return $this->successResponse(null, ['count' => $count, 'place_on_top' => $this->getPlaceTop()]);
     }
 
     public function getZhuma(){
@@ -40,22 +40,13 @@ class ZikirCountController extends Controller
     public function getTopForToday(){
          $data = ZikirCount::query()->whereDate('created_at', today())->with('user')
              ->select('user_id', DB::raw('SUM(count) as total_today'))
-             ->selectRaw('ROW_NUMBER() OVER() AS row_num')
+             ->selectRaw('ROW_NUMBER() OVER(ORDER BY SUM(count) desc) AS row_num')
              ->groupBy('user_id')
              ->orderBy('total_today', 'DESC')
              ->limit(10)
              ->get();
 
-        $user = ZikirCount::query()->whereDate('created_at', today())->with('user')
-            ->select('user_id', DB::raw('SUM(count) as total_today'))
-            ->selectRaw('ROW_NUMBER() OVER() AS row_num')
-            ->groupBy('user_id')
-//            ->where('user_id', 3)
-            ->orderBy('total_today', 'DESC')
-            ->get();
 
-
-        $user = $user->where('user_id', 3);
 
          $data = $data->transform(function ($value){
              return [
@@ -66,7 +57,22 @@ class ZikirCountController extends Controller
              ];
          });
 
-         return array('top' => $data, 'user_top_place' => $user['1']->row_num);
+         return array('top' => $data, 'user_top_place' => $this->getPlaceTop());
+    }
+
+    private function getPlaceTop(){
+        $user = ZikirCount::query()->whereDate('created_at', today())->with('user')
+            ->select('user_id', DB::raw('SUM(count) as total_today'))
+            ->selectRaw('ROW_NUMBER() OVER(ORDER BY SUM(count) desc) AS row_num')
+            ->groupBy('user_id')
+            ->orderBy('total_today', 'ASC')
+            ->get();
+
+
+        $after = ZikirCount::query()->whereDate('created_at', today())->pluck('user_id')->unique()->count();
+
+        $user = $user->where('user_id', auth()->user()->id);
+        return $user->first()->row_num ?? $after + 1;
     }
 
     public function addGoal(Request $request){
@@ -102,7 +108,7 @@ class ZikirCountController extends Controller
                 ->where('user_id', auth()->user()->id)
                 ->orderBy('created_at')
                 ->groupBy(DB::raw("DATE_FORMAT(created_at, '%m-%Y')"))
-                ->get();;
+                ->get();
         }
 
         return [];
