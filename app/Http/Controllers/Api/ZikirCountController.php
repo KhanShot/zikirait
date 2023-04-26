@@ -28,7 +28,7 @@ class ZikirCountController extends Controller
     public function getToday(){
         $count = ZikirCount::query()->where('user_id', auth()->user()->id)->whereDate('created_at', Carbon::today())->sum('count');
 
-        return $this->successResponse(null, ['count' => $count, 'place_on_top' => $this->getPlaceTop()]);
+        return $this->successResponse(null, ['count' => intval($count), 'place_on_top' => $this->getPlaceTop()]);
     }
 
     public function getZhuma(){
@@ -89,6 +89,7 @@ class ZikirCountController extends Controller
             $zikir = ZikirCount::query()
                 ->where('created_at', '>=', \Carbon\Carbon::now()->subWeek())
                 ->groupBy('date')
+                ->where('user_id', auth()->user()->id)
                 ->orderBy('date', 'DESC')
                 ->get(array(
                     DB::raw('Date(created_at) as date'),
