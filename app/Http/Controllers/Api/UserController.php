@@ -89,5 +89,11 @@ class UserController extends Controller
         return $this->successResponse(Utils::$MESSAGE_USER_PROFILE_UPDATED);
     }
 
+    public function delete(){
+        ZikirCount::query()->where('user_id', auth()->user()->id)->delete();
+        UserGoal::query()->where('user_id', auth()->user()->id)->delete();
+        User::query()->find(auth()->user()->id)->delete();
+        return $this->successResponse(Utils::$MESSAGE_SUCCESS_DELETED);
+    }
 
 }

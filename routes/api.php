@@ -27,6 +27,7 @@ Route::prefix('user')->group(function (){
     Route::post('register', [\App\Http\Controllers\Api\UserController::class, 'register']);
 
     Route::post('login', [\App\Http\Controllers\Api\UserController::class, 'login']);
+    Route::delete('delete', [\App\Http\Controllers\Api\UserController::class, 'delete'])->middleware('auth:sanctum');
 
     Route::get('get-info', [\App\Http\Controllers\Api\UserController::class, 'getInfo'])->middleware('auth:sanctum');
 
